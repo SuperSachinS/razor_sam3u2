@@ -92,6 +92,20 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+  LedOff(CYAN);
+  LedOff(GREEN);
+  LedOff(YELLOW);
+  LedOff(ORANGE);
+  
+  LedOff(LCD_RED);
+  LedOff(LCD_GREEN);
+  LedOff(LCD_BLUE);
+  
+  LedOff(BLUE);
+  LedOff(PURPLE);
+  
+  LedPWM(WHITE, LED_PWM_5);
+  
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -140,6 +154,91 @@ State Machine Function Definitions
 /* What does this state do? */
 static void UserApp1SM_Idle(void)
 {
+  
+  static u16 interval = 0;
+  static u16 counter = 0;
+  static u16 display_counter = 0;
+  interval++;
+  if(interval >= 100){
+    interval = 0;
+    counter++;
+    
+    if(counter > 15){
+      counter = 0;
+      display_counter++;
+    
+      if (display_counter > 6){
+        display_counter = 0;
+      }
+    
+      switch(display_counter){
+      
+      case 0:
+        LedOn(LCD_RED);
+        LedOff(LCD_GREEN);
+        LedOff(LCD_BLUE);
+        break;
+      case 1:
+        LedOn(LCD_RED);
+        LedOn(LCD_GREEN);
+        LedOff(LCD_BLUE);
+        break;
+      case 2:
+        LedOff(LCD_RED);
+        LedOn(LCD_GREEN);
+        LedOff(LCD_BLUE);
+        break;
+      case 3:
+        LedOff(LCD_RED);
+        LedOn(LCD_GREEN);
+        LedOn(LCD_BLUE);
+        break;
+      case 4:
+        LedOff(LCD_RED);
+        LedOff(LCD_GREEN);
+        LedOn(LCD_BLUE);
+        break;
+      case 5:
+        LedOn(LCD_RED);
+        LedOff(LCD_GREEN);
+        LedOn(LCD_BLUE);
+        break;
+      case 6:
+        LedOn(LCD_RED);
+        LedOn(LCD_GREEN);
+        LedOn(LCD_BLUE);
+        break;
+      }
+    
+    
+    }
+    
+    if(counter & 0x01){
+      LedPWM(RED, LED_PWM_5);
+    }else{
+      LedOff(RED);
+    }
+    if(counter & 0x02){
+      LedPWM(ORANGE, LED_PWM_5);
+    }else{
+      LedOff(ORANGE);
+    }
+    if(counter & 0x04){
+      LedPWM(YELLOW, LED_PWM_5);
+    }else{
+      LedOff(YELLOW);
+    }
+    if(counter & 0x08){
+      LedPWM(GREEN, LED_PWM_5);
+    }else{
+      LedOff(GREEN);
+    }
+    
+  }
+  
+  
+  
+  
     
 } /* end UserApp1SM_Idle() */
      
