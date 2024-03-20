@@ -46,7 +46,6 @@ All Global variable names shall start with "G_<type>UserApp1"
 /* New variables */
 volatile u32 G_u32UserApp1Flags;                          /*!< @brief Global state flags */
 
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Existing variables (defined in other files -- should all contain the "extern" keyword) */
 extern volatile u32 G_u32SystemTime1ms;                   /*!< @brief From main.c */
@@ -92,10 +91,16 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+  LcdClearChars(LINE1_START_ADDR, LINE1_END_ADDR);
+  LcdClearChars(LINE2_START_ADDR, LINE2_END_ADDR);
+  u8 au8Message[] = "Press to Start";
+  u8 position[] = "\\";
+  LcdMessage(LINE2_START_ADDR, position);
+  LcdMessage(LINE1_START_ADDR, au8Message);
   /* If good initialization, set state to Idle */
   if( 1 )
   {
-    UserApp1_pfStateMachine = UserApp1SM_Idle;
+    UserApp1_pfStateMachine = UserApp1SM_StartUp;
   }
   else
   {
@@ -138,9 +143,207 @@ State Machine Function Definitions
 **********************************************************************************************************************/
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* What does this state do? */
+
+static void UserApp1SM_StartUp(void){
+  u8 message[] = "Click the buttons";
+  u8 colour_positions[] = "R     B      G     W";
+
+
+  if(WasButtonPressed(BUTTON0)){
+    ButtonAcknowledge(BUTTON0);
+    LedOff(LCD_RED);
+    LedOff(LCD_BLUE);
+    LedOff(LCD_GREEN);
+    LcdMessage(LINE1_START_ADDR, message);
+    LcdMessage(LINE2_START_ADDR, colour_positions);
+    UserApp1_pfStateMachine = UserApp1SM_DisplayGame;
+    srand(2);
+
+  }
+
+}
+
+static void UserApp1SM_DisplayGame(void){
+  static int counter = 0;
+  static int period = 1000;
+  static u8 index = 0;
+  static u8 targetColour = 0;
+  static bool readInput = FALSE;
+  static bool correctInput = FALSE;
+  counter++;
+  
+  //start next cycle
+  if (counter == 1000){
+    counter = 0;
+    targetColour = rand() % 4;
+    index++;
+    readInput = TRUE;
+    correctInput = FALSE;
+    if (targetColour == 0){
+      LedOn(LCD_RED);
+      LedOff(LCD_BLUE);
+      LedOff(LCD_GREEN);
+    }
+    else if (targetColour == 1){
+      LedOff(LCD_RED);
+      LedOn(LCD_BLUE);
+      LedOff(LCD_GREEN);
+    }
+    else if (targetColour == 2){
+      LedOff(LCD_RED);
+      LedOff(LCD_BLUE);
+      LedOn(LCD_GREEN);
+    }
+    else if (targetColour == 3){
+      LedOn(LCD_RED);
+      LedOn(LCD_BLUE);
+      LedOn(LCD_GREEN);
+    }else{
+      LedOn(LCD_RED);
+      LedOn(LCD_BLUE);
+      LedOff(LCD_GREEN);
+    }
+    
+  }
+  
+  
+  //check for user input
+  
+  if (readInput){
+    
+    if (targetColour == 0){
+      if(IsButtonPressed(BUTTON0)){
+        correctInput = TRUE;
+      }
+    }
+    else if (targetColour == 1){
+      if(IsButtonPressed(BUTTON1)){
+        correctInput = TRUE;
+      }
+    }
+    else if (targetColour == 2){
+      if(IsButtonPressed(BUTTON2)){
+        correctInput = TRUE;
+      }
+    }
+    else if (targetColour == 3){
+      if(IsButtonPressed(BUTTON3)){
+        correctInput = TRUE;
+      }
+    }
+  
+  }
+  
+  //user inputting correct input, so turn of lcd
+  
+  if(correctInput){
+    //srand(counter);
+    LedOff(LCD_RED);
+    LedOff(LCD_BLUE);
+    LedOff(LCD_GREEN);
+  }
+  
+  
+}
+
 static void UserApp1SM_Idle(void)
 {
+  
+  
+  static u16 counter = 0;
+  static u8 position = 0;
+  static u8 previous_position = 0;
+  static u8 colour_state = 0;
+  static u16 score = 0;
+  
+  counter++;
+  
+  if (counter == 1000){
+    LedOn(LCD_RED);
+    LedOff(LCD_BLUE);
+    LedOff(LCD_GREEN);
+    colour_state = 0;
     
+  }else if (counter == 2000){
+    LedOff(LCD_RED);
+    LedOn(LCD_BLUE);
+    LedOff(LCD_GREEN);
+    colour_state = 1;
+  }else if (counter == 3000){
+    LedOff(LCD_RED);
+    LedOff(LCD_BLUE);
+    LedOn(LCD_GREEN);
+        colour_state = 2;
+  }else if (counter == 4000){
+    LedOn(LCD_RED);
+    LedOn(LCD_BLUE);
+    LedOn(LCD_GREEN);
+    colour_state = 3;
+    counter = 0;
+  }
+  
+  
+  switch(colour_state){
+    case 0:
+      if(IsButtonPressed(BUTTON0)){
+        //ButtonAcknowledge(BUTTON0);
+        LedOff(LCD_RED);
+        LedOff(LCD_BLUE);
+        LedOff(LCD_GREEN);
+        //update_score(score, 1);
+      }
+      break;
+     case 1:
+        if(IsButtonPressed(BUTTON1)){
+          //ButtonAcknowledge(BUTTON1);
+          LedOff(LCD_RED);
+          LedOff(LCD_BLUE);
+          LedOff(LCD_GREEN);
+          //update_score(score, 1);
+        }
+        break;
+      case 2:
+        if(IsButtonPressed(BUTTON2)){
+          //ButtonAcknowledge(BUTTON2);
+          LedOff(LCD_RED);
+          LedOff(LCD_BLUE);
+          LedOff(LCD_GREEN);
+          //update_score(score, 1);
+        }
+        break;
+      case 3:
+        if(IsButtonPressed(BUTTON3)){
+          //ButtonAcknowledge(BUTTON3);
+          LedOff(LCD_RED);
+          LedOff(LCD_BLUE);
+          LedOff(LCD_GREEN);
+          //update_score(score, 1);
+        }
+        break;
+  
+  
+  
+  }
+  
+  
+  /*
+  if (counter % 25 == 0){
+
+    LcdMessage(LINE2_START_ADDR + position, "A");
+    LcdClearChars(LINE2_START_ADDR, previous_position);
+    
+    previous_position = position;
+    if(position == 20){
+      position = 0;
+    }else{
+      position++;
+    }
+    
+  
+  
+  }
+  */
+  
 } /* end UserApp1SM_Idle() */
      
 
