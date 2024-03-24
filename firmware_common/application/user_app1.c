@@ -147,8 +147,9 @@ State Machine Function Definitions
 static void UserApp1SM_StartUp(void){
   u8 message[] = "Click the buttons";
   u8 colour_positions[] = "R     B      G     W";
-
-
+  static u16 seed_number = 0;
+  
+  
   if(WasButtonPressed(BUTTON0)){
     ButtonAcknowledge(BUTTON0);
     LedOff(LCD_RED);
@@ -156,24 +157,78 @@ static void UserApp1SM_StartUp(void){
     LedOff(LCD_GREEN);
     LcdMessage(LINE1_START_ADDR, message);
     LcdMessage(LINE2_START_ADDR, colour_positions);
+    PWMAudioSetFrequency(BUZZER1, 2000);
+    PWMAudioSetFrequency(BUZZER2, 300);
+    srand(seed_number);
     UserApp1_pfStateMachine = UserApp1SM_DisplayGame;
-    srand(2);
-
   }
-
+  
+  seed_number++;
+  
+  if(seed_number > 10000){
+    seed_number = 0;
+  }
 }
 
 static void UserApp1SM_DisplayGame(void){
   static int counter = 0;
-  static int period = 1000;
+  static int refresh_period = 0;
+  
+  static u16 light_blink_counter = 0;
+  static bool led_is_on = FALSE;
+  
+  static u16 buzzer_buzz_counter = 0;
+  static bool buzzer_is_on = FALSE;
+  
+  static u8 user_selection = 0;
   static u8 index = 0;
   static u8 targetColour = 0;
+  
   static bool readInput = FALSE;
   static bool correctInput = FALSE;
+  static bool set_period = TRUE;
+  static bool check_input = FALSE;
+  
+  static u8 lives = 0;
+  static bool set_lives = TRUE;
+  
+  if (set_lives){
+    lives = 3;
+    set_lives = FALSE;
+  }
+  
+  if (lives == 0){
+    PWMAudioOff(BUZZER1);
+    PWMAudioOff(BUZZER2);
+    LedOff(RED);
+    LedOff(GREEN);
+    UserApp1_pfStateMachine = UserApp1SM_StartUp;
+  }
+
   counter++;
   
+  if(set_period){
+    refresh_period = 2000;
+    set_period = FALSE;
+  }
+  
   //start next cycle
-  if (counter == 1000){
+  if (counter >= refresh_period){
+    if(refresh_period >= 1200){
+      refresh_period *= 0.95;
+    }
+    else if (refresh_period >= 600){
+      refresh_period *= 0.98;
+    }
+    else if (refresh_period >= 300){
+    refresh_period -= 5;
+    }
+    else if (refresh_period >= 150){
+      refresh_period -= 2;
+    }
+    else if (refresh_period >= 100){
+      refresh_period -= 1;
+    }
     counter = 0;
     targetColour = rand() % 4;
     index++;
@@ -204,31 +259,60 @@ static void UserApp1SM_DisplayGame(void){
       LedOff(LCD_GREEN);
     }
     
+    ButtonAcknowledge(BUTTON0);
+    ButtonAcknowledge(BUTTON1);
+    ButtonAcknowledge(BUTTON2);
+    ButtonAcknowledge(BUTTON3);
+    
   }
   
   
   //check for user input
-  
+
   if (readInput){
+    if (WasButtonPressed(BUTTON0)){
+      ButtonAcknowledge(BUTTON0);
+      user_selection = 0;
+      check_input = TRUE;
+    }
+    else if (WasButtonPressed(BUTTON1)){
+      ButtonAcknowledge(BUTTON1);
+      user_selection = 1;
+      check_input = TRUE;
+    }
+    else if (WasButtonPressed(BUTTON2)){
+      ButtonAcknowledge(BUTTON2);
+      user_selection = 2;
+      check_input = TRUE;
+    }
+    else if (WasButtonPressed(BUTTON3)){
+      ButtonAcknowledge(BUTTON3);
+      user_selection = 3;
+      check_input = TRUE;
+    }
     
-    if (targetColour == 0){
-      if(IsButtonPressed(BUTTON0)){
+    if(check_input){
+      check_input = FALSE;
+      readInput = FALSE;
+      if(targetColour == user_selection){
         correctInput = TRUE;
+        LedPWM(GREEN, LED_PWM_5);
+        light_blink_counter = 500;
+        led_is_on = TRUE;
+        PWMAudioOn(BUZZER1);
+        buzzer_buzz_counter = 200;
+        buzzer_is_on = TRUE;
       }
-    }
-    else if (targetColour == 1){
-      if(IsButtonPressed(BUTTON1)){
+      else{
+        LedPWM(RED, LED_PWM_5);
         correctInput = TRUE;
-      }
-    }
-    else if (targetColour == 2){
-      if(IsButtonPressed(BUTTON2)){
-        correctInput = TRUE;
-      }
-    }
-    else if (targetColour == 3){
-      if(IsButtonPressed(BUTTON3)){
-        correctInput = TRUE;
+        light_blink_counter = 500;
+        led_is_on = TRUE;
+        PWMAudioOn(BUZZER2);
+        buzzer_buzz_counter = 200;
+        buzzer_is_on = TRUE;
+        
+        lives--;
       }
     }
   
@@ -237,10 +321,31 @@ static void UserApp1SM_DisplayGame(void){
   //user inputting correct input, so turn of lcd
   
   if(correctInput){
-    //srand(counter);
     LedOff(LCD_RED);
     LedOff(LCD_BLUE);
     LedOff(LCD_GREEN);
+  }
+  
+  if(led_is_on){
+    if (light_blink_counter == 0){
+      LedOff(GREEN);
+      LedOff(RED);
+      led_is_on = FALSE;
+    }
+    else{
+      light_blink_counter -= 1;
+    }
+  }
+  
+  if(buzzer_is_on){
+    if(buzzer_buzz_counter == 0){
+      PWMAudioOff(BUZZER1);
+      PWMAudioOff(BUZZER2);
+      buzzer_is_on = FALSE;
+    }
+    else{
+      buzzer_buzz_counter -= 1;
+    }
   }
   
   
